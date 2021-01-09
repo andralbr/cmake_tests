@@ -1,0 +1,98 @@
+#########################################
+## The manual version, adding glfw lib
+## and frameworks manually
+#########################################
+
+
+# Specifiy minimum cmake version
+cmake_minimum_required(VERSION 3.13.0)
+
+# Project
+project(Cubes VERSION 1.0.0)
+
+# C++ standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# ------------------------
+# Libraries
+# ------------------------
+
+# GLFW
+# -----
+# Set base path
+set(glfw3_DIR "/Users/userName/Documents/programming/OpenGL/libs/glfw-3.3.2/macos_build" 
+    CACHE FILEPATH "Path to GLFW installation")
+
+# glfw3 library
+find_library(GLFW_LIB glfw3
+    HINTS ${glfw3_DIR}
+    PATH_SUFFIXES lib REQUIRED)
+
+# glfw3 header
+find_path(GLFW_INCLUDE_DIR "GLFW/glfw3.h" 
+    HINTS ${glfw3_DIR}
+    PATH_SUFFIXES include REQUIRED)
+
+message("GLFW3 library = ${GLFW_LIB}")
+message("GLFW3 include path = ${GLFW_INCLUDE_DIR}")
+
+# Frameworks
+# -----------
+set(_macosFrameworks Cocoa OpenGL IOKit CoreVideo)
+set(macosFrameworks)
+foreach(fwork ${_macosFrameworks})
+    find_library(${fwork}_lib ${fwork} REQUIRED)
+    message("${fwork}_lib = ${${fwork}_lib} ")
+    list(APPEND macosFrameworks ${${fwork}_lib} )
+endforeach()
+
+# GLM
+# -----
+find_path(GLM_INCLUDE_DIR "glm/glm.hpp" 
+    HINTS /Users/userName/Documents/programming/OpenGL/libs/glm
+    PATH_SUFFIXES include include/glm REQUIRED)
+
+if (GLM_INCLUDE_DIR)
+    message("GLM_INCLUDE_DIR = ${GLM_INCLUDE_DIR}")
+endif()
+
+# GLAD
+# -------
+find_path(GLAD_INCLUDE_DIR "glad/glad.h" 
+    HINTS /Users/userName/Documents/programming/OpenGL/libs/glad
+    PATH_SUFFIXES include include/glm REQUIRED)
+
+if (GLAD_INCLUDE_DIR)
+    message("GLAD_INCLUDE_DIR = ${GLAD_INCLUDE_DIR}")
+endif()
+
+
+# -----------------------
+# Source files
+# ------------------------
+
+set(SRC_FILES 
+    src/main.cpp
+    src/tools/shader_input.cpp
+    src/tools/stb_image.cpp 
+    src/tools/glad.c)
+
+set(SRC_INCLUDE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/tools )
+
+
+# ------------------------
+# Target executable
+# ------------------------
+# Add executable
+add_executable(cubes ${SRC_FILES})  
+
+# Set include directories
+target_include_directories(cubes PRIVATE ${SRC_INCLUDE} ${GLFW_INCLUDE_DIR} ${GLM_INCLUDE_DIR} ${GLAD_INCLUDE_DIR}) 
+
+# Link libraries
+target_link_libraries(cubes PRIVATE ${GLFW_LIB} ${macosFrameworks})
+
+
+

@@ -1,0 +1,163 @@
+#############################
+# CMake basics
+#############################
+
+#[[ This file describes the
+    basic CMake syntax
+#]]
+
+# Minimum CMake version required
+cmake_minimum_required(VERSION 3.13.0)
+
+# Project (also works w/o version)
+project(My_Project VERSION 1.0.0)
+
+# C++ standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Include modules 
+# Ending .cmake and content is copied here
+# list(APPEND CMAKE_MODULE_PATH /path/to/module)
+include(ProcessorCount)   # in /CMAKE-3.xx/Modules
+ProcessorCount(noCores)
+message("Number of CPU cores = ${noCores}")
+
+
+# ===================
+# Project libraries
+# ===================
+# Create library 
+add_library(my_lib 
+    src/file1.cpp
+    src/file2.cpp)
+
+# Library header directories
+target_include_directories(my_lib PUBLIC
+    $<INSTALL_INTERFACE:include>       # Relative to CMAKE_INSTALL_PREFIX
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>) #assuming, headers are in source directory
+
+
+# ==================================
+# Subdirectory CMakeLists.txt file
+# ==================================
+add_subdirectory(src/mySubProject)
+
+#
+# Comment: Opens new scope, i.e. variables defined in 
+
+
+# =====================
+# External libraries
+# =====================
+
+# Option 1: find_package
+# ------------------------
+# Works, if a lib1-config.cmake / lib1Config.cmake exists
+
+# Set path to config.cmake file (if non-standard path)
+# Can also be made a non-cache variable 
+set(lib1_DIR "/path/to/lib1/confFile" CACHE FILEPATH "Path to lib1 config")
+
+# Find config and configure
+find_package(lib1 REQUIRED)
+# Syntax: find_package(my_lib [MODE]) with [MODE]: CONFIG or MODULE
+# If no mode specified, the search will be Module -> Config
+
+# (opt.) check
+if (lib1_FOUND)
+    message("lib1 found")
+else()
+    message(FATAL_ERROR "lib1 could not be found!")
+endif()
+
+# Now 
+#   - lib1_INCLUDE_DIRS contains the include directories
+#   - lib1_LIBS the libraries with paths
+
+
+# Option 2: pgk-config
+# ----------------------
+# A configuration file lib2.pc exists
+
+# Set path to configuration file
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/add/path/to/pc/file")
+
+# Find PgkConfig
+find_package(PkgConfig REQUIRED)
+
+# "Import" lib2.pc file
+pgk_check_modules(lib2 REQUIRED lib2)
+
+# or (stops whenever first match found)
+# pgk_find_modules(lib2 REQUIRED lib2 lib2v01)
+
+# Now:
+#   lib2_INCLUDE_DIRS: contains include directories
+#   lib2_LIBRARIES: contains libraries
+
+
+# Option 3: find_library / find_path
+# -----------------------------------
+# Comment: also liblib3Name.a or liblib3Name.so can be given
+# The "NAMES" keyword allows for a variety of names to be searched
+find_library(lib3 lib3Name
+    HINTS /Users/userName/Documents/programming/cmake/06_install/installation
+    PATH_SUFFIXES lib lib/my_math REQUIRED)
+
+# Find include header
+set(lib3_headers my_math/addition.h my_math/division.h)
+foreach( header ${lib3_headers})
+    find_path(header_path ${header} 
+        HINTS /Users/userName/Documents/programming/cmake/06_install/installation
+        PATH_SUFFIXES include include/lib3 REQUIRED)
+    list(APPEND lib3_include ${header_path})
+endforeach()
+list(REMOVE_DUPLICATES lib3_include)
+
+# Result
+message("Library (incl. path) = ${lib3}")
+message("Include folders = ${lib3_include}")
+
+# Option 3b: Find module
+# -----------------------
+# Find my_math library via module /cmake/modules/Findmy_math.cmake
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules)
+find_package( my_math REQUIRED)
+
+
+# Add executable
+add_executable(my_exe src/main.cpp)
+
+# Add include folders
+target_include_directories(my_exe PRIVATE ${lib1_INCLUDE_DIRS} ${lib2_INCLUDE_DIRS} ${lib3_include} )
+
+# Specify lib directories (opt. if not full path given for link_libraries)
+target_link_directories(my_exe PRIVATE /a/lib/path)
+ 
+# Link program
+target_link_libraries(my_exe PRIVATE my_lib ${lib1_LIBS} ${lib2_LIBRARIES} ${lib3})
+
+# Add variable that can be used in code (#ifdef libDIRS  #endif)
+add_definitions(-DlibDirs="${lib2_INCLUDE_DIRS}")
+# Recommended: target_compile_definitions, which can be associated to target
+# or add_compile_definitions if needed in all targets
+# ==================
+# Install
+# ==================
+
+# Copy header files
+install(FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/header1.h 
+    ${CMAKE_CURRENT_SOURCE_DIR}/header2.h
+    DESTINATON ${CMAKE_INSTALL_PREFIX}/include/myLib)
+
+# copy library/ target with export in config-mode
+install(TARGETS my_lib EXPORT my_libExp DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/my_math)
+install(EXPORT my_libExp FILE my_lib-config.cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/my_math)
+
+
+# ... or: directly namne libExp -> my_lib-config.cmake ?
+
+# ALTERATIVE: module mode, create FIND_my_lib.cmake which will be found by setting
+# CMAKE_MODULE_PATH

@@ -1,0 +1,8 @@
+
+
+add_library(tools 
+    glad.c
+    shader_input.cpp
+    stb_image.cpp)
+
+target_include_directories(tools PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${GLAD_INCLUDE_DIR} ${GLM_INCLUDE_DIR})

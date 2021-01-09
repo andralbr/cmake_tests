@@ -1,0 +1,58 @@
+
+# Create dynamic or shared library dependent on flag
+if (DYNAMIC_MATH_LIB)
+    add_library(my_math SHARED
+    addition.cpp
+    division.cpp)
+elseif()
+    add_library(my_math STATIC
+    addition.cpp
+    division.cpp) 
+endif()
+
+# Create position independent code for shared libraries
+if (DYNAMIC_MATH_LIB)
+    set_target_properties(my_math PROPERTIES
+    POSITION_INDEPENDENT_CODE ON)
+endif()
+
+# Include dir, public makes sure that also depending targets 
+# (here: "calculator") inherit include path
+# target_include_directories(my_math PUBLIC .)
+
+# Here: Using generators for correct export
+# Install -> path relative to "CMAKE_INSTALL_PREFIX" below
+target_include_directories(my_math PUBLIC
+$<INSTALL_INTERFACE:include>
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+
+# --------
+# Install
+# --------
+
+# Header files
+install(FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/addition.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/division.h 
+    DESTINATION include/my_math)
+
+# Library
+# install(TARGETS my_math DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/my_math)
+
+# ... also creating an export group (also adjust include directory above)
+install(TARGETS my_math EXPORT mathExp DESTINATION lib/my_math)
+install(EXPORT mathExp FILE my_math-config.cmake DESTINATION lib/my_math)
+
+# ... it seems easier to do EXPORT my_math-config and omit FILE in EXPORT
+
+# Two options
+# - module mode: expects "Findmy_math.cmake" in CMAKE_MODULE_PATH (to bet set)
+# - Config mode: expects "my_math-config.cmake" (if no default path, CMAKE_PREFIX_PATH can be set)
+# By default find_package searches in module, then in config mode, unless
+# find_package(my_math CONFIG) or find_package(my_math MODULE) explicitly specified
+
+# CUSTOM INSTALLATION DIRECTORY
+# Option1: cmake -DCMAKE_INSTALL_PREFIX=../installation ..
+# Option2: make DESTDIR=../installation install
+
+message("CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
