@@ -1,0 +1,38 @@
+
+# Sources:
+# https://discourse.cmake.org/t/understanding-the-cmake-component-keyword-in-the-install-command/971
+
+cmake_minimum_required(VERSION 3.0.0)
+
+project(components VERSION 1.0.0)
+
+
+add_executable(demo src/demo.cpp)
+
+add_library(add src/add.cpp src/add.h)
+target_include_directories(add PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+install( TARGETS demo 
+         EXPORT ${PROJECT_NAME}-config 
+         DESTINATION ${CMAKE_INSTALL_PREFIX}
+         COMPONENT howTo )
+
+install( TARGETS add 
+         EXPORT ${PROJECT_NAME}-config
+         DESTINATION ${CMAKE_INSTALL_PREFIX}
+         COMPONENT math)
+
+install( EXPORT ${PROJECT_NAME}-config 
+         DESTINATION ${CMAKE_INSTALL_PREFIX}
+         NAMESPACE ${PROJECT_NAME}::           # Targets addressed with namespace components::
+         COMPONENT all                         # Component of total configuration == all available targets
+         )
+
+
+# import:
+#find_package(components REQUIRED COMPONENTS math CONFIG)
+#target_link_libraries(myTarget PRIVATE components::math)
+
+# ... import all
+#find_package(components REQUIRED COMPONENTS all CONFIG)
+#target_link_libraries(myTarget PRIVATE components::math)
