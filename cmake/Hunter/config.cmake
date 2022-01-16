@@ -1,0 +1,2 @@
+hunter_config(GTestAA URL "https://github.com/google/googletest/archive/refs/tags/release-1.11.0.tar.gz" SHA1 "7b100bb68db8df1060e178c495f3cbe941c9b058")
+#https://github.com/<username>/<repository>/tarball/<version>
